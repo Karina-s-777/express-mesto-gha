@@ -67,8 +67,6 @@ module.exports.editUserData = (req, res) => {
     .catch((error) => {
       if (error instanceof mongoose.Error.ValidationError) {
         res.status(CastError).send({ message: 'Неверный id' });
-      } else if (error instanceof mongoose.Error.CastError) {
-        res.status(CastError).send({ message: 'Неверный id' });
       } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
         res.status(DocumentNotFoundError).send({ message: 'Пользователь не найден' });
       } else {
@@ -85,8 +83,6 @@ module.exports.editUserAvatar = (req, res) => {
     })
     .catch((error) => {
       if (error instanceof mongoose.Error.ValidationError) {
-        res.status(CastError).send({ message: 'Неверный id' });
-      } else if (error instanceof mongoose.Error.CastError) {
         res.status(CastError).send({ message: 'Неверный id' });
       } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
         res.status(DocumentNotFoundError).send({ message: 'Пользователь не найден' });
