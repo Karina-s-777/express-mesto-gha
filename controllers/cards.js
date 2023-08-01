@@ -1,8 +1,3 @@
-// const Created = 201;
-// const CastError = 400;
-// const DocumentNotFoundError = 404;
-// const InternalServerError = 500;
-
 const { default: mongoose } = require('mongoose');
 const {
   Created,
