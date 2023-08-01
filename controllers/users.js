@@ -65,7 +65,7 @@ module.exports.editUserData = (req, res) => {
       res.send(user);
     })
     .catch((error) => {
-      if (error instanceof mongoose.Error.CastError) {
+      if (error.name === 'ValidathionError') {
         res.status(CastError).send({ message: 'Неверный id' });
       } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
         res.status(DocumentNotFoundError).send({ message: 'Пользователь не найден' });
@@ -74,6 +74,24 @@ module.exports.editUserData = (req, res) => {
       }
     });
 };
+
+// module.exports.editUserData = (req, res) => {
+//   const { name, about } = req.body;
+//   User.findByIdAndUpdate(req.user._id, { name, about }, { new: 'true', runValidators: true })
+//     .orFail()
+//     .then((user) => {
+//       res.send(user);
+//     })
+//     .catch((error) => {
+//       if (error instanceof mongoose.Error.CastError) {
+//         res.status(CastError).send({ message: 'Неверный id' });
+//       } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
+//         res.status(DocumentNotFoundError).send({ message: 'Пользователь не найден' });
+//       } else {
+//         res.status(InternalServerError).send({ message: 'Произошла ошибка на сервере' });
+//       }
+//     });
+// };
 
 module.exports.editUserAvatar = (req, res) => {
   User.findByIdAndUpdate(req.user._id, { avatar: req.body.avatar }, { new: 'true', runValidators: true })
