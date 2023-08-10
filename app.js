@@ -7,7 +7,7 @@ const {
 } = require('./status/status');
 
 const { login, addUser } = require('./controllers/users');
-const { auth } = require('./middlewares/auth');
+const auth = require('./middlewares/auth');
 // Слушаем 3000 порт, mestodb — имя базы данных, которая будет создана.
 const { PORT = 3000, DB_URL = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
 const { validateUserBody } = require('./middlewares/validata');
@@ -22,14 +22,14 @@ mongoose.connect(DB_URL, {
   useNewUrlParser: true,
 });
 
+app.post('/signin', validateUserBody, addUser);
+app.post('/signup', validateUserBody, login);
+
 app.use(errors());
 app.use(auth);
 
 app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
-
-app.post('/signin', validateUserBody, addUser);
-app.post('/signup', validateUserBody, login);
 
 // Обработка неправильного пути с ошибкой 404
 app.use('*', (req, res) => {
