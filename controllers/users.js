@@ -69,7 +69,7 @@ module.exports.addUser = (req, res) => {
       });
     })
     .catch((error) => {
-      if (error instanceof mongoose.Error.ConflictError) {
+      if (error.code === 11000) {
         res.status(ConflictError).send({ message: 'Пользователь с таким электронным адресом уже зарегистрирован' });
       } else if (error.name === 'ValidationError') {
         res.status(CastError).send({ message: error.message });
