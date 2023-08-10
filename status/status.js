@@ -4,6 +4,7 @@ const CastError = 400;
 const DocumentNotFoundError = 404;
 const InternalServerError = 500;
 const Unauthorized = 401;
+const ConflictError = 409;
 
 module.exports = {
   NoError,
@@ -12,4 +13,5 @@ module.exports = {
   DocumentNotFoundError,
   InternalServerError,
   Unauthorized,
+  ConflictError,
 };

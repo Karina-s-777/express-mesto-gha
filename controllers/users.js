@@ -13,6 +13,7 @@ const {
   DocumentNotFoundError,
   InternalServerError,
   Unauthorized,
+  ConflictError,
 } = require('../status/status');
 
 const User = require('../models/user');
@@ -68,7 +69,9 @@ module.exports.addUser = (req, res) => {
       });
     })
     .catch((error) => {
-      if (error.name === 'ValidationError') {
+      if (error instanceof mongoose.Error.ConflictError) {
+        res.status(ConflictError).send({ message: 'Пользователь с таким электронным адресом уже зарегистрирован' });
+      } else if (error.name === 'ValidationError') {
         res.status(CastError).send({ message: error.message });
       } else {
         res.status(InternalServerError).send({ message: 'Произошла ошибка на сервере' });
