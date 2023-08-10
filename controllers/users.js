@@ -57,12 +57,6 @@ module.exports.addUser = (req, res) => {
     }))
   // Метод create может быть промисом — ему можно добавить обработчики then и catch.
   // Так обычно и делают, чтобы вернуть клиенту данные или ошибку
-    // .then((user) => {
-    //   const { _id } = user;
-    //   return res.status(NoError).send({
-    //     name, about, avatar, email, _id,
-    //   });
-    // })
     .then((user) => {
       const { _id } = user;
       return res.status(NoError).send({

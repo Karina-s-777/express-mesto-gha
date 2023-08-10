@@ -22,8 +22,8 @@ mongoose.connect(DB_URL, {
   useNewUrlParser: true,
 });
 
-app.post('/signin', validateUserBody, addUser);
-app.post('/signup', validateUserBody, login);
+app.post('/signin', validateUserBody, login);
+app.post('/signup', validateUserBody, addUser);
 
 app.use(auth);
 
