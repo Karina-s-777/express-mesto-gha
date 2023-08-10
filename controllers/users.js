@@ -136,14 +136,16 @@ module.exports.login = (req, res) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      // создадим токен
-      const token = jwt.sign(
-        { _id: user._id },
-        SECRET_SIGNING_KEY,
-        { expiresIn: 3600 }, // токен будет просрочен через час после создания
-      );
-      // вернём токен
-      res.status(NoError).send({ token });
+      if (user) {
+        // создадим токен
+        const token = jwt.sign(
+          { _id: user._id },
+          SECRET_SIGNING_KEY,
+          { expiresIn: '7d' }, // токен будет просрочен через час после создания
+        );
+        // вернём токен
+        res.status(NoError).send({ token });
+      }
     })
     .catch((error) => {
       if (error instanceof mongoose.Error.Unauthorized) {
