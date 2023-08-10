@@ -51,7 +51,7 @@ module.exports.addUser = (req, res) => {
     name, about, avatar, email, password,
   } = req.body;
   // // получим из объекта запроса имя, описание пользователя и аватар
-  bcrypt.hash(password, 10)
+  bcrypt.hash(password, 8)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
     }))
@@ -64,7 +64,14 @@ module.exports.addUser = (req, res) => {
     //   });
     // })
     .then((user) => {
-      res.status(NoError).send(user);
+      const { _id } = user;
+      return res.status(NoError).send({
+        email,
+        name,
+        about,
+        avatar,
+        _id,
+      });
     })
     .catch((error) => {
       if (error.name === 'ValidationError') {
