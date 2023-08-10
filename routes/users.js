@@ -2,15 +2,17 @@
 // файл маршрутов определяет, при каком запросе применять логику  обработки запросов
 const router = require('express').Router();
 const {
-  getUsers, getUserById, addUser, editUserData, editUserAvatar,
+  getUsers, getUserById, editUserData, editUserAvatar, getUserData,
 } = require('../controllers/users');
 
 //  возвращает всех пользователей
 router.get('/', getUsers);
 //  возвращает пользователя по _id
 router.get('/:userId', getUserById);
-//  создаёт пользователя
-router.post('/', addUser);
+// //  создаёт пользователя
+// router.post('/', addUser);
+// получения информации о пользователе
+router.get('/me', getUserData);
 // обновляет профиль
 router.patch('/me', editUserData);
 // обновляет аватар

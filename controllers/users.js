@@ -1,15 +1,22 @@
+const bcrypt = require('bcryptjs'); // импортируем bcrypt
+const jwt = require('jsonwebtoken');
+
 // Создаем контроллеры - функции, ответственные за взаимодействие с моделью.
 // То есть это функции, которые выполняют создание, чтение, обновление или удаление документа.
 // Файл контроллеров описывает логику обработки запросов
+
 const { default: mongoose } = require('mongoose');
+const { SECRET_SIGNING_KEY } = require('../utils/constants');
 const {
   NoError,
   CastError,
   DocumentNotFoundError,
   InternalServerError,
+  Unauthorized,
 } = require('../status/status');
 
 const User = require('../models/user');
+// const bcrypt = require('bcryptjs');
 
 module.exports.getUsers = (req, res) => {
   // используем методы mongo find и т.д.
@@ -40,11 +47,22 @@ module.exports.getUserById = (req, res) => {
 
 // Создание документов
 module.exports.addUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
   // // получим из объекта запроса имя, описание пользователя и аватар
-  User.create({ name, about, avatar })
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
   // Метод create может быть промисом — ему можно добавить обработчики then и catch.
   // Так обычно и делают, чтобы вернуть клиенту данные или ошибку
+    // .then((user) => {
+    //   const { _id } = user;
+    //   return res.status(NoError).send({
+    //     name, about, avatar, email, _id,
+    //   });
+    // })
     .then((user) => {
       res.status(NoError).send(user);
     })
@@ -89,5 +107,46 @@ module.exports.editUserAvatar = (req, res) => {
       } else {
         res.status(InternalServerError).send({ message: 'Произошла ошибка на сервере' });
       }
+    });
+};
+
+module.exports.getUserData = (req, res) => {
+  User.findById(req.user.userId)
+    .orFail()
+    .then((user) => {
+      res.send(user);
+    })
+    .catch((error) => {
+      if (error instanceof mongoose.Error.ValidationError) {
+        res.status(CastError).send({ message: 'Неверный id' });
+      } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
+        res.status(DocumentNotFoundError).send({ message: 'Пользователь не найден' });
+      } else {
+        res.status(InternalServerError).send({ message: 'Произошла ошибка на сервере' });
+      }
+    });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      // создадим токен
+      const token = jwt.sign(
+        { _id: user._id },
+        SECRET_SIGNING_KEY,
+        { expiresIn: 3600 }, // токен будет просрочен через час после создания
+      );
+      // вернём токен
+      res.status(NoError).send({ token });
+    })
+    .catch((error) => {
+      if (error instanceof mongoose.Error.Unauthorized) {
+        res
+          .status(Unauthorized)
+          .send({ message: 'Введены неправильные данные' });
+      }
+      res.status(InternalServerError).send({ message: 'Произошла ошибка на сервере' });
     });
 };
