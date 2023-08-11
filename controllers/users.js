@@ -26,17 +26,13 @@ module.exports.getUsers = (req, res, next) => {
 
 module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
-    .orFail()
     .then((user) => {
-      res.send({ user });
+      if (user) return res.send({ user });
+      throw new NotFoundError('Пользователь с таким id не найден');
     })
     .catch((error) => {
-      //  оператор instanceof позволяет определить, является ли указанный объект (ошибка)
-      //  экземпляром некоторого класса c учётом иерархии наследования.
       if (error.name === 'CastError') {
         next(new InaccurateDataError('Передан некорректный id'));
-      } else if (error.name === 'NotFoundError') {
-        next(new NotFoundError('Пользователь не найден'));
       } else {
         next(error);
       }
@@ -64,13 +60,13 @@ module.exports.addUser = (req, res, next) => {
         _id,
       });
     })
-    .catch((err) => {
-      if (err.code === 11000) {
+    .catch((error) => {
+      if (error.code === 11000) {
         next(new ConflictError('Пользователь с таким электронным адресом уже зарегистрирован'));
-      } else if (err.name === 'ValidationError') {
+      } else if (error.name === 'ValidationError') {
         next(new InaccurateDataError('Переданы некорректные данные при регистрации пользователя'));
       } else {
-        next(err);
+        next(error);
       }
     });
 };
@@ -78,15 +74,13 @@ module.exports.addUser = (req, res, next) => {
 module.exports.editUserData = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: 'true', runValidators: true })
-    .orFail()
     .then((user) => {
-      res.send(user);
+      if (user) return res.send({ user });
+      throw new NotFoundError('Пользователь с таким id не найден');
     })
     .catch((error) => {
       if (error.name === 'ValidationError' || error.name === 'CastError') {
         next(new InaccurateDataError('Переданы некорректные данные при обновлении профиля'));
-      } else if (error.name === 'NotFoundError') {
-        next(new NotFoundError('Пользователь не найден'));
       } else {
         next(error);
       }
@@ -95,15 +89,13 @@ module.exports.editUserData = (req, res, next) => {
 
 module.exports.editUserAvatar = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, { avatar: req.body.avatar }, { new: 'true', runValidators: true })
-    .orFail()
     .then((user) => {
-      res.send(user);
+      if (user) return res.send({ user });
+      throw new NotFoundError('Пользователь с таким id не найден');
     })
     .catch((error) => {
       if (error.name === 'ValidationError' || error.name === 'CastError') {
         next(new InaccurateDataError('Переданы некорректные данные при обновлении профиля'));
-      } else if (error.name === 'NotFoundError') {
-        next(new NotFoundError('Пользователь не найден'));
       } else {
         next(error);
       }
@@ -112,17 +104,13 @@ module.exports.editUserAvatar = (req, res, next) => {
 
 module.exports.getUserData = (req, res, next) => {
   User.findById(req.user.userId)
-    .orFail()
     .then((user) => {
-      res.send(user);
+      if (user) return res.send({ user });
+      throw new NotFoundError('Пользователь с таким id не найден');
     })
     .catch((error) => {
-      //  оператор instanceof позволяет определить, является ли указанный объект (ошибка)
-      //  экземпляром некоторого класса c учётом иерархии наследования.
       if (error.name === 'CastError') {
         next(new InaccurateDataError('Передан некорректный id'));
-      } else if (error.name === 'NotFoundError') {
-        next(new NotFoundError('Пользователь не найден'));
       } else {
         next(error);
       }
@@ -131,7 +119,6 @@ module.exports.getUserData = (req, res, next) => {
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
-
   User
     .findUserByCredentials(email, password)
     .then(({ _id: userId }) => {
@@ -141,7 +128,6 @@ module.exports.login = (req, res, next) => {
           SECRET_SIGNING_KEY,
           { expiresIn: '7d' },
         );
-
         return res.send({ _id: token });
       }
       throw new UnauthorizedError('Неправильные почта или пароль');

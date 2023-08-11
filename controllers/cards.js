@@ -7,13 +7,14 @@ const {
 const Card = require('../models/card');
 const InaccurateDataError = require('../errors/InaccurateDataError');
 const NotFoundError = require('../errors/NotFoundError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
 module.exports.getCards = (req, res, next) => {
   // используем методы mongo find и т.д.
   // Пустой объект метода ({}) вернет все объекты, которые мы писали в базе
   Card.find({})
     .populate(['owner', 'likes'])
-    .then((cards) => res.send(cards))
+    .then((cards) => res.send({ data: cards }))
     .catch(next);
 };
 
@@ -23,57 +24,67 @@ module.exports.createCard = (req, res, next) => {
   // создаем  карточку и внутрь кладем id
   Card.create({ name, link, owner: req.user._id })
   // когда карточка создалась, берем её
-    .then((card) => {
-      // по созданной карточке берем её id и делаем поиск
-      Card.findById(card._id)
-      // ссылаемся на документ в других коллекциях. Работает с уже созданными документами
-      // положили тут объект пользователя
-        .populate('owner')
-        // берем данные и возвращаем в ответе
-        .then((data) => res.status(Created).send(data))
-        .catch(() => {
-          // если id не найден в базе, то ошибка 404
-          next(new NotFoundError('Карточка не найдена'));
-        });
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
-      } else {
-        next(err);
-      }
-    });
-};
-
-module.exports.deleteCard = (req, res, next) => {
-  Card.findByIdAndRemove(req.params.cardId)
-    .orFail()
-    .then((card) => {
-      res.send(card);
-    })
+    .then((card) => res.status(Created).send({ data: card }))
     .catch((error) => {
-      if (error.name === InaccurateDataError) {
+      if (error.name === 'ValidationError') {
         next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
-      } else if (error.name === 'NotFoundError') {
-        next(new NotFoundError('Пользователь не найден'));
       } else {
         next(error);
       }
     });
 };
+module.exports.deleteCard = (req, res, next) => {
+  const { id: cardId } = req.params;
+  const { userId } = req.user;
+  Card
+    .findById({
+      _id: cardId,
+    })
+    .then((card) => {
+      if (!card) {
+        throw new NotFoundError('Данные по указанному id не найдены');
+      }
+      const { owner: cardOwnerId } = card;
+      if (cardOwnerId.valueOf() !== userId) {
+        throw new ForbiddenError('Нет прав доступа');
+      }
+      return Card.findByIdAndDelete(cardId);
+    })
+    .then((deletedCard) => {
+      if (!deletedCard) {
+        throw new NotFoundError('Карточка уже была удалена');
+      }
+      res.send({ data: deletedCard });
+    })
+    .catch(next);
+};
+
+// module.exports.deleteCard = (req, res, next) => {
+//   Card.findByIdAndRemove(req.params.cardId)
+//     .then((card) => {
+//       res.send(card);
+//     })
+//     .catch((error) => {
+//       if (error.name === InaccurateDataError) {
+//         next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
+//       } else if (error.name === 'NotFoundError') {
+//         next(new NotFoundError('Пользователь не найден'));
+//       } else {
+//         next(error);
+//       }
+//     });
+// };
 
 module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
-    .orFail()
     .populate(['owner', 'likes'])
     .then((card) => {
-      res.send(card);
+      if (card) return res.send({ data: card });
+      throw new NotFoundError('Карточка с указанным id не найдена');
     })
     .catch((error) => {
-      if (error.name === InaccurateDataError) {
-        next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
-      } else if (error.name === 'NotFoundError') {
-        next(new NotFoundError('Пользователь не найден'));
+      if (error.name === 'ValidationError' || error.name === 'CastError') {
+        next(new InaccurateDataError('Переданы некорректные данные при добавлении лайка карточке'));
       } else {
         next(error);
       }
@@ -85,13 +96,13 @@ module.exports.dislikeCard = (req, res, next) => {
     .orFail()
     .populate(['owner', 'likes'])
     .then((card) => {
-      res.send(card);
+      if (card) return res.send({ data: card });
+
+      throw new NotFoundError('Данные по указанному id не найдены');
     })
     .catch((error) => {
-      if (error.name === InaccurateDataError) {
-        next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
-      } else if (error.name === 'NotFoundError') {
-        next(new NotFoundError('Пользователь не найден'));
+      if (error.name === 'ValidationError' || error.name === 'CastError') {
+        next(new InaccurateDataError('Переданы некорректные данные при снятии лайка карточки'));
       } else {
         next(error);
       }
