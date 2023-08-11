@@ -24,15 +24,24 @@ module.exports.createCard = (req, res, next) => {
   // создаем  карточку и внутрь кладем id
   Card.create({ name, link, owner: req.user._id })
   // когда карточка создалась, берем её
-    .then((card) => res.status(Created).send({ data: card }))
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
-      } else {
-        next(error);
-      }
+    .then((card) => {
+    // по созданной карточке берем её id и делаем поиск
+      Card.findById(card._id)
+      // ссылаемся на документ в других коллекциях. Работает с уже созданными документами
+      // положили тут объект пользователя
+        .populate('owner')
+      // берем данные и возвращаем в ответе
+        .then((data) => res.status(Created).send(data))
+        .catch((error) => {
+          if (error.name === 'ValidationError') {
+            next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
+          } else {
+            next(error);
+          }
+        });
     });
 };
+
 module.exports.deleteCard = (req, res, next) => {
   const { id: cardId } = req.params;
   const { userId } = req.user;

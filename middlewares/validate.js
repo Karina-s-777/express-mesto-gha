@@ -14,4 +14,11 @@ const validateUserBody = celebrate({
   }),
 });
 
-module.exports = { validateUserBody };
+const validateLogin = celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  }),
+});
+
+module.exports = { validateUserBody, validateLogin };

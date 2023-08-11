@@ -7,6 +7,19 @@ const {
   getUsers, getUserById, editUserData, editUserAvatar, getUserData,
 } = require('../controllers/users');
 
+// //  возвращает всех пользователей
+// router.get('/', getUsers);
+// //  возвращает пользователя по _id
+// router.get('/:userId', getUserById);
+// // //  создаёт пользователя
+// // router.post('/', addUser);
+// // получения информации о пользователе
+// router.get('/me', getUserData);
+// // обновляет профиль
+// router.patch('/me', editUserData);
+// // обновляет аватар
+// router.patch('/me/avatar', editUserAvatar);
+
 //  возвращает всех пользователей
 router.get('/', getUsers);
 //  возвращает пользователя по _id
