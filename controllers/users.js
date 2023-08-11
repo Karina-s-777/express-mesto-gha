@@ -46,7 +46,6 @@ module.exports.getUserById = (req, res) => {
     });
 };
 
-// Создание документов
 module.exports.addUser = (req, res) => {
   const {
     name, about, avatar, email, password,
@@ -71,13 +70,43 @@ module.exports.addUser = (req, res) => {
     .catch((error) => {
       if (error.code === 11000) {
         res.status(ConflictError).send({ message: 'Пользователь с таким электронным адресом уже зарегистрирован' });
-      } else if (error.name === 'ValidationError') {
+      } else if (error instanceof mongoose.Error.ValidationError) {
         res.status(CastError).send({ message: error.message });
       } else {
         res.status(InternalServerError).send({ message: 'Произошла ошибка на сервере' });
       }
     });
 };
+
+// Создание документов
+// module.exports.addUser = (req, res) => {
+//   const {
+//     email, password, name, about,avatar,
+//   } = req.body;
+//   // // получим из объекта запроса имя, описание пользователя и аватар
+//   bcrypt.hash(password, 8)
+//     .then((hash) => User.create({
+//       email, password: hash,
+//     }))
+//     // Метод create может быть промисом — ему можно добавить обработчики then и catch.
+//     // Так обычно и делают, чтобы вернуть клиенту данные или ошибку
+//     .then((user) => {
+//       return res.status(NoError).send({
+//         _id: user._id,
+//         email: user.email,
+//       });
+//     })
+//     .catch((error) => {
+//       if (error.code === 11000) {
+//         res.status(ConflictError).send({ message:
+// 'Пользователь с таким электронным адресом уже зарегистрирован' });
+//       } else if (error.name === 'ValidationError') {
+//         res.status(CastError).send({ message: error.message });
+//       } else {
+//         res.status(InternalServerError).send({ message: 'Произошла ошибка на сервере' });
+//       }
+//     });
+// };
 
 module.exports.editUserData = (req, res) => {
   const { name, about } = req.body;
@@ -146,7 +175,7 @@ module.exports.login = (req, res) => {
       res.status(NoError).send({ token });
     })
     .catch((error) => {
-      if (error instanceof mongoose.Error.Unauthorized) {
+      if (error instanceof mongoose.Error.ValidationError) {
         res
           .status(Unauthorized)
           .send({ message: 'Введены неправильные данные' });

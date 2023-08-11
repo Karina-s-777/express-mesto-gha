@@ -8,10 +8,9 @@ const {
 
 const { login, addUser } = require('./controllers/users');
 const { auth } = require('./middlewares/auth');
+const { validateUserBody } = require('./middlewares/validate');
 // Слушаем 3000 порт, mestodb — имя базы данных, которая будет создана.
 const { PORT = 3000, DB_URL = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
-const { validateUserBody } = require('./middlewares/validata');
-
 const app = express();
 
 app.use(bodyParser.json()); // для собирания JSON-формата
@@ -22,8 +21,8 @@ mongoose.connect(DB_URL, {
   useNewUrlParser: true,
 });
 
-app.post('/signin', validateUserBody, login);
 app.post('/signup', validateUserBody, addUser);
+app.post('/signin', validateUserBody, login);
 
 app.use(auth);
 

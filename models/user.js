@@ -75,8 +75,6 @@ userSchema.statics.findUserByCredentials = function (email, password) {
     });
 };
 
-module.exports = mongoose.model('user', userSchema);
-
 // создаём модель и экспортируем её.
 // Мы передали методу mongoose.model два аргумента: имя модели и схему,
 // которая описывает будущие документы
