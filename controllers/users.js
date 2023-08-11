@@ -160,6 +160,27 @@ module.exports.getUserData = (req, res) => {
     });
 };
 
+// module.exports.login = (req, res, next) => {
+//   const { email, password } = req.body;
+
+//   User
+//     .findUserByCredentials(email, password)
+//     .then(({ _id: userId }) => {
+//       if (userId) {
+//         const token = jwt.sign(
+//           { userId },
+//           SECRET_SIGNING_KEY,
+//           { expiresIn: '7d' },
+//         );
+
+//         return res.send({ _id: token });
+//       }
+
+//       throw new Unauthorized('Неправильные почта или пароль');
+//     })
+//     .catch(next);
+// };
+
 module.exports.login = (req, res) => {
   const { email, password } = req.body;
 
