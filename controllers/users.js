@@ -11,9 +11,13 @@ const {
 } = require('../status/status');
 
 const User = require('../models/user');
+// 401
 const UnauthorizedError = require('../errors/UnauthorizedError');
+// 400
 const InaccurateDataError = require('../errors/InaccurateDataError');
+// 409
 const ConflictError = require('../errors/ConflictError');
+// 404
 const NotFoundError = require('../errors/NotFoundError');
 
 module.exports.getUsers = (req, res, next) => {
@@ -28,11 +32,11 @@ module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (user) return res.send({ user });
-      throw new NotFoundError('Пользователь с таким id не найден');
+      throw new NotFoundError({ message: 'Пользователь с таким id не найден' });
     })
     .catch((error) => {
       if (error.name === 'CastError') {
-        next(new InaccurateDataError('Передан некорректный id'));
+        next(new InaccurateDataError({ message: 'Передан некорректный id' }));
       } else {
         next(error);
       }
@@ -62,9 +66,9 @@ module.exports.addUser = (req, res, next) => {
     })
     .catch((error) => {
       if (error.code === 11000) {
-        next(new ConflictError('Пользователь с таким электронным адресом уже зарегистрирован'));
+        next(new ConflictError({ message: 'Пользователь с таким электронным адресом уже зарегистрирован' }));
       } else if (error.name === 'ValidationError') {
-        next(new InaccurateDataError('Переданы некорректные данные при регистрации пользователя'));
+        next(new InaccurateDataError({ message: 'Произошла ошибка на сервере' }));
       } else {
         next(error);
       }
@@ -76,11 +80,11 @@ module.exports.editUserData = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: 'true', runValidators: true })
     .then((user) => {
       if (user) return res.send({ user });
-      throw new NotFoundError('Пользователь с таким id не найден');
+      throw new NotFoundError({ message: 'Пользователь с таким id не найден' });
     })
     .catch((error) => {
       if (error.name === 'ValidationError' || error.name === 'CastError') {
-        next(new InaccurateDataError('Переданы некорректные данные при обновлении профиля'));
+        next(new InaccurateDataError({ message: 'Переданы некорректные данные при обновлении профиля' }));
       } else {
         next(error);
       }
@@ -91,11 +95,11 @@ module.exports.editUserAvatar = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, { avatar: req.body.avatar }, { new: 'true', runValidators: true })
     .then((user) => {
       if (user) return res.send({ user });
-      throw new NotFoundError('Пользователь с таким id не найден');
+      throw new NotFoundError({ message: 'Пользователь с таким id не найден' });
     })
     .catch((error) => {
       if (error.name === 'ValidationError' || error.name === 'CastError') {
-        next(new InaccurateDataError('Переданы некорректные данные при обновлении профиля'));
+        next(new InaccurateDataError({ message: 'Переданы некорректные данные при обновлении профиля' }));
       } else {
         next(error);
       }
@@ -106,11 +110,11 @@ module.exports.getUserData = (req, res, next) => {
   User.findById(req.user.userId)
     .then((user) => {
       if (user) return res.send({ user });
-      throw new NotFoundError('Пользователь с таким id не найден');
+      throw new NotFoundError({ message: 'Пользователь с таким id не найден' });
     })
     .catch((error) => {
       if (error.name === 'CastError') {
-        next(new InaccurateDataError('Передан некорректный id'));
+        next(new InaccurateDataError({ message: 'Передан некорректный id' }));
       } else {
         next(error);
       }
@@ -130,7 +134,7 @@ module.exports.login = (req, res, next) => {
         );
         return res.send({ _id: token });
       }
-      throw new UnauthorizedError('Неправильные почта или пароль');
+      throw new UnauthorizedError({ message: 'Неправильные почта или пароль' });
     })
     .catch(next);
 };
