@@ -28,9 +28,9 @@ module.exports.getUserById = (req, res, next) => {
       if (error instanceof mongoose.Error.CastError) {
         next(new BadRequestError('Неверный id'));
       } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
-        next(new NotFoundError('Пользователь не найден' ));
+        next(new NotFoundError('Пользователь не найден'));
       } else {
-       next(error);
+        next(error);
       }
     });
 };
@@ -65,7 +65,7 @@ module.exports.editUserData = (req, res, next) => {
       if (error instanceof mongoose.Error.ValidationError) {
         next(new BadRequestError(error.message));
       } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
-        next(new NotFoundError('Пользователь не найден' ));
+        next(new NotFoundError('Пользователь не найден'));
       } else {
         next(error);
       }
@@ -83,7 +83,7 @@ module.exports.editUserAvatar = (req, res, next) => {
       if (error instanceof mongoose.Error.ValidationError) {
         next(new BadRequestError(error.message));
       } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
-        next(new NotFoundError('Пользователь не найден' ));
+        next(new NotFoundError('Пользователь не найден'));
       } else {
         next(error);
       }

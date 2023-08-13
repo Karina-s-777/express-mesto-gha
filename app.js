@@ -1,9 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const {
-  DocumentNotFoundError,
-} = require('./status/status');
+const NotFoundError = require('./errors/NotFoundError');
 
 // Слушаем 3000 порт, mestodb — имя базы данных, которая будет создана.
 const { PORT = 3000, DB_URL = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
@@ -28,8 +26,8 @@ app.use((req, res, next) => {
 app.use('/', require('./routes/index'));
 
 // Обработка неправильного пути с ошибкой 404
-app.use('*', (req, res) => {
-  res.status(DocumentNotFoundError).send({ message: 'Страница не найдена' });
+app.use('*', (req, res, next) => {
+  next(new NotFoundError('Страница не найдена'));
 });
 
 app.use((err, req, res, next) => {
