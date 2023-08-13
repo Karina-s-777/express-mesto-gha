@@ -1,20 +1,17 @@
-const {
-  Created,
-  // CastError,
-  // DocumentNotFoundError,
-  // InternalServerError,
-} = require('../status/status');
+const { HTTP_STATUS_CREATED, HTTP_STATUS_OK } = require('http2').constants;
+const { default: mongoose } = require('mongoose');
 const Card = require('../models/card');
-const InaccurateDataError = require('../errors/InaccurateDataError');
 const NotFoundError = require('../errors/NotFoundError');
-const ForbiddenError = require('../errors/ForbiddenError');
+const BadRequestError = require('../errors/BadRequestError');
 
 module.exports.getCards = (req, res, next) => {
   // используем методы mongo find и т.д.
   // Пустой объект метода ({}) вернет все объекты, которые мы писали в базе
   Card.find({})
     .populate(['owner', 'likes'])
-    .then((cards) => res.send({ data: cards }))
+    .then((cards) => {
+      res.status(HTTP_STATUS_OK).send(cards);
+    })
     .catch(next);
 };
 
@@ -25,75 +22,57 @@ module.exports.createCard = (req, res, next) => {
   Card.create({ name, link, owner: req.user._id })
   // когда карточка создалась, берем её
     .then((card) => {
-    // по созданной карточке берем её id и делаем поиск
+      // по созданной карточке берем её id и делаем поиск
       Card.findById(card._id)
       // ссылаемся на документ в других коллекциях. Работает с уже созданными документами
       // положили тут объект пользователя
         .populate('owner')
-      // берем данные и возвращаем в ответе
-        .then((data) => res.status(Created).send(data))
-        .catch((error) => {
-          if (error.name === 'ValidationError') {
-            next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
-          } else {
-            next(error);
-          }
+        // берем данные и возвращаем в ответе
+        .then((data) => res.status(HTTP_STATUS_CREATED).send(data))
+        .catch(() => {
+          // если id не найден в базе, то ошибка 404
+          next(new NotFoundError('Карточка не найдена'));
         });
+    })
+    .catch((error) => {
+      // если id не найден в базе, то ошибка 404
+      if (error instanceof mongoose.Error.ValidationError) {
+        next(new BadRequestError(error.message));
+      } else {
+        next(error);
+      }
     });
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  const { id: cardId } = req.params;
-  const { userId } = req.user;
-  Card
-    .findById({
-      _id: cardId,
-    })
+  Card.findByIdAndRemove(req.params.cardId)
+    .orFail()
     .then((card) => {
-      if (!card) {
-        throw new NotFoundError('Данные по указанному id не найдены');
-      }
-      const { owner: cardOwnerId } = card;
-      if (cardOwnerId.valueOf() !== userId) {
-        throw new ForbiddenError('Нет прав доступа');
-      }
-      return Card.findByIdAndDelete(cardId);
+      res.send(card);
     })
-    .then((deletedCard) => {
-      if (!deletedCard) {
-        throw new NotFoundError('Карточка уже была удалена');
+    .catch((error) => {
+      if (error instanceof mongoose.Error.CastError) {
+        next(new BadRequestError('Неверный id'));
+      } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError('Карточка не найдена'));
+      } else {
+        next(error);
       }
-      res.send({ data: deletedCard });
-    })
-    .catch(next);
+    });
 };
-
-// module.exports.deleteCard = (req, res, next) => {
-//   Card.findByIdAndRemove(req.params.cardId)
-//     .then((card) => {
-//       res.send(card);
-//     })
-//     .catch((error) => {
-//       if (error.name === InaccurateDataError) {
-//         next(new InaccurateDataError('Переданы некорректные данные при создании карточки'));
-//       } else if (error.name === 'NotFoundError') {
-//         next(new NotFoundError('Пользователь не найден'));
-//       } else {
-//         next(error);
-//       }
-//     });
-// };
 
 module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
+    .orFail()
     .populate(['owner', 'likes'])
     .then((card) => {
-      if (card) return res.send({ data: card });
-      throw new NotFoundError('Карточка с указанным id не найдена');
+      res.send(card);
     })
     .catch((error) => {
-      if (error.name === 'ValidationError' || error.name === 'CastError') {
-        next(new InaccurateDataError('Переданы некорректные данные при добавлении лайка карточке'));
+      if (error instanceof mongoose.Error.CastError) {
+        next(new BadRequestError('Неверный id'));
+      } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError('Карточка не найдена'));
       } else {
         next(error);
       }
@@ -105,13 +84,13 @@ module.exports.dislikeCard = (req, res, next) => {
     .orFail()
     .populate(['owner', 'likes'])
     .then((card) => {
-      if (card) return res.send({ data: card });
-
-      throw new NotFoundError('Данные по указанному id не найдены');
+      res.send(card);
     })
     .catch((error) => {
-      if (error.name === 'ValidationError' || error.name === 'CastError') {
-        next(new InaccurateDataError('Переданы некорректные данные при снятии лайка карточки'));
+      if (error instanceof mongoose.Error.CastError) {
+        next(new BadRequestError('Неверный id'));
+      } else if (error instanceof mongoose.Error.DocumentNotFoundError) {
+        next(new NotFoundError('Карточка не найдена'));
       } else {
         next(error);
       }
