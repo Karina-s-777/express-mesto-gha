@@ -1,18 +1,30 @@
 // Создаем контроллеры - функции, ответственные за взаимодействие с моделью.
 // То есть это функции, которые выполняют создание, чтение, обновление или удаление документа.
 // Файл контроллеров описывает логику обработки запросов
+const bcrypt = require('bcryptjs'); // импортируем bcrypt
+const jwt = require('jsonwebtoken');
 const { HTTP_STATUS_OK, HTTP_STATUS_CREATED } = require('http2').constants;
 const { default: mongoose } = require('mongoose');
-
-const User = require('../models/user');
+// const SECRET_SIGNING_KEY = require('../utils/constants');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
+const ConflictError = require('../errors/NotFoundError');
+const UnauthorizedError = require('../errors/UnauthorizedError');
+const User = require('../models/user');
 
 module.exports.getUsers = (req, res, next) => {
   // используем методы mongo find и т.д.
   // Пустой объект метода ({}) вернет все объекты, которые мы писали в базе
   User.find({})
     .then((users) => res.send(users))
+    .catch(next);
+};
+
+module.exports.getUser = (req, res, next) => {
+  // используем методы mongo find и т.д.
+  // Пустой объект метода ({}) вернет все объекты, которые мы писали в базе
+  User.findById(req.user._id)
+    .then((user) => res.send(user))
     .catch(next);
 };
 
@@ -37,22 +49,67 @@ module.exports.getUserById = (req, res, next) => {
 
 // Создание документов
 module.exports.addUser = (req, res, next) => {
-  const { name, about, avatar } = req.body;
-  // // получим из объекта запроса имя, описание пользователя и аватар
-  User.create({ name, about, avatar })
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
   // Метод create может быть промисом — ему можно добавить обработчики then и catch.
   // Так обычно и делают, чтобы вернуть клиенту данные или ошибку
+  bcrypt.hash(password, 8)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
     .then((user) => {
-      res.status(HTTP_STATUS_CREATED).send(user);
+      console.log(user);
+      const { _id } = user;
+      return res.status(HTTP_STATUS_CREATED).send({
+        email,
+        name,
+        about,
+        avatar,
+        _id,
+      });
     })
     .catch((error) => {
-      if (error instanceof mongoose.Error.ValidationError) {
+      if (error.code === 11000) {
+        next(new ConflictError('Пользователь с таким электронным адресом уже зарегистрирован'));
+      } else if (error instanceof mongoose.Error.ValidationError) {
         next(new BadRequestError(error.message));
       } else {
         next(error);
       }
     });
 };
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findOne({ email }).select('+password')
+    .then((user) => {
+      if (!user || !bcrypt.compareSync(password, user.password)) {
+        throw new UnauthorizedError('Неправильные почта или пароль');
+      }
+      const token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        { expiresIn: '7d' },
+      );
+      res.send({ token });
+    })
+    .catch((error) => next(error));
+};
+
+// module.exports.login = (req, res, next) => {
+//   const { email, password } = req.body;
+//   return User.findUserByCredentials(email, password)
+//     .then((user) => {
+//       const token = jwt.sign(
+//         { _id: user._id },
+//         'some-secret-key',
+//         { expiresIn: '7d' },
+//       );
+//       res.send({ token });
+//     })
+//     .catch((error) => next(error));
+// };
 
 module.exports.editUserData = (req, res, next) => {
   const { name, about } = req.body;
