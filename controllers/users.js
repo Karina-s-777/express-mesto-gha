@@ -79,23 +79,6 @@ module.exports.addUser = (req, res, next) => {
     });
 };
 
-// module.exports.login = (req, res, next) => {
-//   const { email, password } = req.body;
-//   return User.findOne({ email }).select('+password')
-//     .then((user) => {
-//       if (!user || !bcrypt.compareSync(password, user.password)) {
-//         throw new UnauthorizedError('Неправильные почта или пароль');
-//       }
-//       const token = jwt.sign(
-//         { _id: user._id },
-//         'some-secret-key',
-//         { expiresIn: '7d' },
-//       );
-//       res.send({ token });
-//     })
-//     .catch((error) => next(error));
-// };
-
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
