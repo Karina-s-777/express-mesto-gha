@@ -1,14 +1,14 @@
 // Создаем контроллеры - функции, ответственные за взаимодействие с моделью.
 // То есть это функции, которые выполняют создание, чтение, обновление или удаление документа.
 // Файл контроллеров описывает логику обработки запросов
+const { HTTP_STATUS_OK, HTTP_STATUS_CREATED } = require('http2').constants;
 const bcrypt = require('bcryptjs'); // импортируем bcrypt
 const jwt = require('jsonwebtoken');
-const { HTTP_STATUS_OK, HTTP_STATUS_CREATED } = require('http2').constants;
 const { default: mongoose } = require('mongoose');
 // const SECRET_SIGNING_KEY = require('../utils/constants');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
-const ConflictError = require('../errors/NotFoundError');
+const ConflictError = require('../errors/ConflictError');
 // npm
 const User = require('../models/user');
 
