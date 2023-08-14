@@ -9,7 +9,7 @@ const { default: mongoose } = require('mongoose');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 const ConflictError = require('../errors/NotFoundError');
-const UnauthorizedError = require('../errors/UnauthorizedError');
+// npm
 const User = require('../models/user');
 
 module.exports.getUsers = (req, res, next) => {
@@ -59,7 +59,6 @@ module.exports.addUser = (req, res, next) => {
       name, about, avatar, email, password: hash,
     }))
     .then((user) => {
-      console.log(user);
       const { _id } = user;
       return res.status(HTTP_STATUS_CREATED).send({
         email,
@@ -80,27 +79,13 @@ module.exports.addUser = (req, res, next) => {
     });
 };
 
-module.exports.login = (req, res, next) => {
-  const { email, password } = req.body;
-  return User.findOne({ email }).select('+password')
-    .then((user) => {
-      if (!user || !bcrypt.compareSync(password, user.password)) {
-        throw new UnauthorizedError('Неправильные почта или пароль');
-      }
-      const token = jwt.sign(
-        { _id: user._id },
-        'some-secret-key',
-        { expiresIn: '7d' },
-      );
-      res.send({ token });
-    })
-    .catch((error) => next(error));
-};
-
 // module.exports.login = (req, res, next) => {
 //   const { email, password } = req.body;
-//   return User.findUserByCredentials(email, password)
+//   return User.findOne({ email }).select('+password')
 //     .then((user) => {
+//       if (!user || !bcrypt.compareSync(password, user.password)) {
+//         throw new UnauthorizedError('Неправильные почта или пароль');
+//       }
 //       const token = jwt.sign(
 //         { _id: user._id },
 //         'some-secret-key',
@@ -110,6 +95,20 @@ module.exports.login = (req, res, next) => {
 //     })
 //     .catch((error) => next(error));
 // };
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        { expiresIn: '7d' },
+      );
+      res.send({ token });
+    })
+    .catch((error) => next(error));
+};
 
 module.exports.editUserData = (req, res, next) => {
   const { name, about } = req.body;

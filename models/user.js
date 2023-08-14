@@ -3,8 +3,9 @@
 // например, у пользователя должно быть имя и информация о себе.
 // Зададим схему для пользователя через Mongoose:
 const mongoose = require('mongoose');
-// const bcrypt = require('bcryptjs'); // импортируем bcrypt
-// const UnauthorizedError = require('../errors/UnauthorizedError');
+const bcrypt = require('bcryptjs'); // импортируем bcrypt
+const UnauthorizedError = require('../errors/UnauthorizedError');
+const ForbiddenError = require('../errors/ForbiddenError');
 // const urlRegex = require('../utils/constants');
 
 const userSchema = new mongoose.Schema({
@@ -55,23 +56,23 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-// userSchema.statics.findUserByCredentials = function findUserByCredentials(email, password) {
-//   return this
-//     .findOne({ email })
-//     .select('+password')
-//     .then((user) => {
-//       if (!user) {
-//         throw new UnauthorizedError('Неправильные почта или пароль');
-//       }
-//       return bcrypt.compare(password, user.password)
-//         .then((matched) => {
-//           if (!matched) {
-//             throw new UnauthorizedError('Неправильные почта или пароль 333');
-//           }
-//           return user; // теперь user доступен
-//         });
-//     });
-// };
+userSchema.statics.findUserByCredentials = function findUserByCredentials(email, password) {
+  return this
+    .findOne({ email })
+    .select('+password')
+    .then((user) => {
+      if (!user) {
+        throw new ForbiddenError('Пользователь не найден');
+      }
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            throw new UnauthorizedError('Неправильные почта или пароль 333');
+          }
+          return user; // теперь user доступен
+        });
+    });
+};
 
 // создаём модель и экспортируем её.
 // Мы передали методу mongoose.model два аргумента: имя модели и схему,
