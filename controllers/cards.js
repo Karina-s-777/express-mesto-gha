@@ -9,9 +9,9 @@ module.exports.getCards = (req, res, next) => {
   // используем методы mongo find и т.д.
   // Пустой объект метода ({}) вернет все объекты, которые мы писали в базе
   Card.find({})
-    .populate(['owner', 'likes'])
+    // .populate(['owner', 'likes'])
     .then((cards) => {
-      res.status(HTTP_STATUS_OK).send(cards);
+      res.status(HTTP_STATUS_CREATED).send(cards);
     })
     .catch(next);
 };
@@ -24,16 +24,17 @@ module.exports.createCard = (req, res, next) => {
   // когда карточка создалась, берем её
     .then((card) => {
       // по созданной карточке берем её id и делаем поиск
-      Card.findById(card._id)
-      // ссылаемся на документ в других коллекциях. Работает с уже созданными документами
-      // положили тут объект пользователя
-        .populate('owner')
-        // берем данные и возвращаем в ответе
-        .then((data) => res.status(HTTP_STATUS_CREATED).send(data))
-        .catch(() => {
-          // если id не найден в базе, то ошибка 404
-          next(new NotFoundError('Карточка не найдена'));
-        });
+      // Card.findById(card._id)
+      // // ссылаемся на документ в других коллекциях. Работает с уже созданными документами
+      // // положили тут объект пользователя
+      //   // .populate('owner')
+      //   // берем данные и возвращаем в ответе
+      //   .then((data) => res.status(HTTP_STATUS_CREATED).send(data))
+      //   .catch(() => {
+      //     // если id не найден в базе, то ошибка 404
+      //     next(new NotFoundError('Карточка не найдена'));
+      //   });
+      res.status(HTTP_STATUS_OK).send(card);
     })
     .catch((error) => {
       // если id не найден в базе, то ошибка 404
@@ -58,7 +59,7 @@ module.exports.deleteCard = (req, res, next) => {
 module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
     .orFail()
-    .populate(['owner', 'likes'])
+    // .populate(['owner', 'likes'])
     .then((card) => {
       res.send(card);
     })
@@ -76,7 +77,7 @@ module.exports.likeCard = (req, res, next) => {
 module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
     .orFail()
-    .populate(['owner', 'likes'])
+    // .populate(['owner', 'likes'])
     .then((card) => {
       res.send(card);
     })
